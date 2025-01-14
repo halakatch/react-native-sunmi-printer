@@ -37,9 +37,8 @@ public class SunmiPrinterModule extends ReactContextBaseJavaModule {
   private static final String TAG = "SunmiPrinter_Error";
 
   private SunmiPrinterService printerService;
-  private final ReactApplicationContext reactContext;
 
-
+// -----
   private ServiceConnection serviceConnection = new ServiceConnection() {
       @Override
       public void onServiceConnected(ComponentName name, IBinder service) {
@@ -67,6 +66,7 @@ public class SunmiPrinterModule extends ReactContextBaseJavaModule {
       super.onDestroy();
       unbindService(serviceConnection);
   }
+// -----
 
   private InnerResultCallback innerResultCallback = new InnerResultCallback() {
     @Override
@@ -108,18 +108,21 @@ public class SunmiPrinterModule extends ReactContextBaseJavaModule {
     }
   };
 
-    private void initializePrinterService() {
+// ---
+    private void initializePrinterService(reactContext) {
         Intent intent = new Intent();
         intent.setPackage("com.sunmi.peripheral.printer");
         intent.setAction("com.sunmi.peripheral.printer.SERVICE");
         reactContext.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
     }
-
+//---
   public SunmiPrinterModule(ReactApplicationContext reactContext) {
-    try {
       super(reactContext);
+    try {
+      // ---
       this.reactContext = reactContext;
-      initializePrinterService();
+      initializePrinterService(reactContext);
+      // ----
       InnerPrinterManager.getInstance().bindService(reactContext, innerPrinterCallback);
     } catch (RemoteException e) {
       Log.i(TAG, "ERROR: " + e.getMessage());
@@ -334,6 +337,7 @@ public class SunmiPrinterModule extends ReactContextBaseJavaModule {
   public void printerText(String text) throws RemoteException {
     if (printerService != null) {
         try {
+          // original
             printerService.printText(text, null);
         } catch (RemoteException e) {
             e.printStackTrace();
