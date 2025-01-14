@@ -32,11 +32,41 @@ public class SunmiPrinterModule extends ReactContextBaseJavaModule {
 
   private Promise p;
 
-  private SunmiPrinterService printerService;
 
   public static final String NAME = "SunmiPrinter";
-
   private static final String TAG = "SunmiPrinter_Error";
+
+  private SunmiPrinterService printerService;
+  private final ReactApplicationContext reactContext;
+
+
+  private ServiceConnection serviceConnection = new ServiceConnection() {
+      @Override
+      public void onServiceConnected(ComponentName name, IBinder service) {
+          printerService = SunmiPrinterService.Stub.asInterface(service);
+      }
+
+      @Override
+      public void onServiceDisconnected(ComponentName name) {
+          printerService = null;
+      }
+  };
+
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+      super.onCreate(savedInstanceState);
+
+      Intent intent = new Intent();
+      intent.setPackage("com.sunmi.peripheral.printer");
+      intent.setAction("com.sunmi.peripheral.printer.SERVICE");
+      bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+  }
+
+  @Override
+  protected void onDestroy() {
+      super.onDestroy();
+      unbindService(serviceConnection);
+  }
 
   private InnerResultCallback innerResultCallback = new InnerResultCallback() {
     @Override
@@ -78,9 +108,18 @@ public class SunmiPrinterModule extends ReactContextBaseJavaModule {
     }
   };
 
+    private void initializePrinterService() {
+        Intent intent = new Intent();
+        intent.setPackage("com.sunmi.peripheral.printer");
+        intent.setAction("com.sunmi.peripheral.printer.SERVICE");
+        reactContext.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+    }
+
   public SunmiPrinterModule(ReactApplicationContext reactContext) {
-    super(reactContext);
     try {
+      super(reactContext);
+      this.reactContext = reactContext;
+      initializePrinterService();
       InnerPrinterManager.getInstance().bindService(reactContext, innerPrinterCallback);
     } catch (RemoteException e) {
       Log.i(TAG, "ERROR: " + e.getMessage());
@@ -293,7 +332,16 @@ public class SunmiPrinterModule extends ReactContextBaseJavaModule {
    */
   @ReactMethod
   public void printerText(String text) throws RemoteException {
-    printerService.printText(text, null);
+    if (printerService != null) {
+        try {
+            printerService.printText(text, null);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+            Log.e("PrinterError", "Failed to print text: " + e.getMessage());
+        }
+    } else {
+        Log.e("PrinterError", "Printer service is not initialized");
+    }
   }
 
   /**
