@@ -109,7 +109,7 @@ public class SunmiPrinterModule extends ReactContextBaseJavaModule {
   };
 
 // ---
-    private void initializePrinterService(reactContext) {
+    private void initializePrinterService(ReactApplicationContext reactContext) {
         Intent intent = new Intent();
         intent.setPackage("com.sunmi.peripheral.printer");
         intent.setAction("com.sunmi.peripheral.printer.SERVICE");
